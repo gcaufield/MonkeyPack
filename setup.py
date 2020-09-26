@@ -8,6 +8,7 @@ here = pathlib.Path(__file__).parent
 readme = (here / "README.md").read_text()
 
 requires = [
+    'requests>=2.0,<3',
     'PyGithub~=1.53'
     ]
 
