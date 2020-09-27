@@ -121,7 +121,7 @@ def update_barrel_jungle(file, barrels):
             asset = barrels[key]
             if asset is None:
                 continue
-            f.write('{name} = "{asset}"\n'.format(name=key, asset=asset))
+            f.write('{name} = "{asset}"\n'.format(name=key, asset=asset.replace('/', '\\'))
             barrel_path += ";$({name})".format(name=key)
         f.write("base.barrelPath = {barrel_path}".format(barrel_path=barrel_path))
 
