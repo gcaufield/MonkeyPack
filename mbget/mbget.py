@@ -4,6 +4,7 @@ import re
 import argparse
 import xml.etree.cElementTree as ET
 import os
+import json
 
 BARREL_FILE = re.compile(r'^.+\.barrel$')
 
@@ -57,14 +58,36 @@ def parse_manifest(manifest_file):
 
     return barrel_map
 
+def read_cache_file(barrel_dir):
+    """
 
-def download_dep(dep, version, repo, token, dir):
+    :param barrel_dir:
+    :return:
+    """
+    cache_file = os.path.join(barrel_dir, '.mbgetcache')
+
+    packages = {}
+    cache = None
+
+    try:
+        with open(cache_file, 'r') as f:
+            cache = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        # Couldn't open cache
+        return None
+
+
+    return packages
+
+
+def download_dep(dep, version, repo, token, barrel_dir):
     """
 
     :param dep:
     :param version:
     :param repo:
     :param token:
+    :param barrel_dir:
     :return:
     """
     print("Get dependency {dep} ({version})".format(dep=dep, version=version))
@@ -96,7 +119,7 @@ def download_dep(dep, version, repo, token, dir):
                     headers['Authorization'] = 'token {token}'.format(token=token[0])
 
                 release = requests.get(asset.url, headers=headers)
-                filename = os.path.join(dir, asset.name)
+                filename = os.path.join(barrel_dir, asset.name)
                 with open(filename, 'wb') as f:
                     f.write(release.content)
                 return filename
