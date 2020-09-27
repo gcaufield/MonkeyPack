@@ -93,7 +93,7 @@ def download_dep(dep, version, repo, token, dir):
                 headers = {'Accept': 'application/octet-stream'}
 
                 if token is not None:
-                    headers['Authorization'] = 'token {token}'.format(token=token)
+                    headers['Authorization'] = 'token {token}'.format(token=token[0])
 
                 release = requests.get(asset.url, headers=headers)
                 filename = os.path.join(dir, asset.name)
