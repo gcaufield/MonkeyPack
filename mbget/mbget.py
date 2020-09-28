@@ -4,6 +4,8 @@ import re
 import argparse
 import xml.etree.cElementTree as Et
 import os
+import json
+import hashlib
 
 BARREL_FILE = re.compile(r'^.+\.barrel$')
 
@@ -53,35 +55,184 @@ def parse_manifest(manifest_file):
         return None
 
     for dep in root.findall(".//iq:barrels/iq:depends", namespaces=ns):
-        barrel_map[dep.attrib["name"]] = dep.attrib["version"]
+        barrel_map[dep.attrib["name"]] = {"version": dep.attrib["version"], "download" : True}
 
     return barrel_map
 
 
-def download_dep(dep, version, repo, token, dir):
+def hash_file(path):
+    """
+
+    :param path:
+    :return:
+    """
+    BLOCK_SIZE = 65535
+    h = hashlib.sha256()
+    with open(path, 'rb') as f:
+        fb = f.read(BLOCK_SIZE)
+        while len(fb) > 0:
+            h.update(fb)
+            fb = f.read(BLOCK_SIZE)
+
+    return h.hexdigest()
+
+
+def load_cache_file(barrel_dir):
+    """
+
+    :param barrel_dir:
+    :return:
+    """
+    cache_file = os.path.join(barrel_dir, '.mbgetcache')
+    try:
+        with open(cache_file, 'r') as f:
+            cache = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        # Couldn't open cache
+        return None
+
+    return cache
+
+
+def validate_cache(cache):
+    """
+
+    :type cache: dict
+    """
+    keys_to_remove = []
+    for key in cache.keys():
+        invalid_entry = False
+        cache_entry = cache[key]
+        try:
+            if hash_file(cache_entry["asset"]) != cache_entry["hash"]:
+                invalid_entry = True
+        except OSError:
+            invalid_entry = True
+
+        if invalid_entry:
+            keys_to_remove.append(key)
+
+    # Remove any invalid cache entries
+    for key in keys_to_remove:
+        cache.pop(key)
+    return
+
+
+def version_matches_requirement(version, requirement):
+    """
+
+    :param version:
+    :param requirement:
+    :return:
+    """
+    tag_match = re.compile("^v{version}".format(version=requirement))
+    if tag_match.match(version) is None:
+        return False
+
+    return True
+
+
+def cache_matches_dependency(cache, dependency):
+    """
+
+    :param cache:
+    :param dependency:
+    :return:
+    """
+    if not version_matches_requirement(cache["tag"], dependency["version"]):
+        return False
+
+    return True
+
+
+def check_package_cache(barrel_dir, dependencies):
+    """
+
+    :param barrel_dir:
+    :param dependencies:
+    :return:
+    """
+    cache = load_cache_file(barrel_dir)
+
+    # Check if we loaded a cache
+    if cache is None:
+        return
+
+    validate_cache(cache)
+
+    for key in dependencies.keys():
+        dependency = dependencies[key]
+        if key not in cache:
+            # No cache entry for the required package
+            continue
+        if not cache_matches_dependency(cache[key], dependency):
+            # Cache entry doesn't match requirement
+            continue
+
+        # We got a cache hit, save the details and clear the download flag
+        dependency["tag"] = cache[key]["tag"]
+        dependency["asset"] = cache[key]["asset"]
+        dependency["download"] = False
+
+    return
+
+
+def update_cache_file(barrel_dir, packages):
+    """
+
+    :param barrel_dir:
+    :param packages:
+    :return:
+    """
+    cache = load_cache_file(barrel_dir)
+
+    if cache is None:
+        # Previous cache didn't exist
+        cache = {}
+
+    for key in packages.keys():
+        package = packages[key]
+
+        # If the package wasn't downloaded don't add it to the cache
+        if not package["download"]:
+            continue
+
+        cache_entry = {"tag": package["tag"], "asset": package["asset"]}
+        try:
+            cache_entry["hash"] = hash_file(package["asset"])
+        except OSError:
+            # Something went wrong parsing the cache entry, don't return it
+            continue
+
+        cache[key] = cache_entry
+
+    cache_file = os.path.join(barrel_dir, '.mbgetcache')
+
+    # TODO Try/Except
+    with open(cache_file, 'w') as f:
+        json.dump(cache, f)
+
+
+def download_dep(dep, data, token, barrel_dir):
     """
 
     :param dep:
-    :param version:
-    :param repo:
+    :param data:
     :param token:
+    :param barrel_dir:
     :return:
     """
-    print("Get dependency {dep} ({version})".format(dep=dep, version=version))
-
-    assets = []
-
     if token is not None:
         github = Github(token[0])
     else:
         github = Github()
 
-    repo = github.get_repo(repo)
+    repo = github.get_repo(data["repo"])
 
     # Search the releases for a version that we can use
     for release in repo.get_releases():
-        tag_match = re.compile("^v{version}".format(version=version))
-        if tag_match.match(release.tag_name) is None:
+        if not version_matches_requirement(release.tag_name, data["version"]):
+            # Version does not match our requirement
             continue
 
         # Matching tag download the barrels
@@ -95,15 +246,19 @@ def download_dep(dep, version, repo, token, dir):
                 if token is not None:
                     headers['Authorization'] = 'token {token}'.format(token=token[0])
 
-                release = requests.get(asset.url, headers=headers)
-                filename = os.path.join(dir, asset.name)
+                req = requests.get(asset.url, headers=headers)
+                filename = os.path.join(barrel_dir, asset.name)
                 with open(filename, 'wb') as f:
-                    f.write(release.content)
-                return filename
+                    f.write(req.content)
 
-        print("No asset available for version {version}".format(version=version))
+                # Save the asset name and the release tag
+                data["asset"] = filename
+                data["tag"] = release.tag_name
+                return
 
-    print("Unable to find matching version {version}".format(version=version))
+        print("No asset available for version {version}".format(version=data["version"]))
+
+    print("Unable to find matching version {version}".format(version=data["version"]))
     return None
 
 
@@ -118,7 +273,7 @@ def update_barrel_jungle(file, barrels):
     with open(file, 'w') as f:
         f.write('# Do not hand edit this auto generated file from mbget\n')
         for key in barrels.keys():
-            asset = barrels[key]
+            asset = barrels[key]["asset"]
             if asset is None:
                 continue
             f.write('{name} = "{asset}"\n'.format(name=key, asset=asset))
@@ -135,11 +290,6 @@ def main():
     parser.add_argument('-o', '--directory', default='barrels', help='Specify directory to store barrels in')
     args = parser.parse_args()
 
-    package_map = parse_packages(args.package)
-    if package_map is None:
-        # Invalid package map... Exit.
-        return
-
     dependencies = parse_manifest(args.manifest)
     if dependencies is None:
         # Invalid manifest
@@ -149,18 +299,39 @@ def main():
         print("No dependencies to download")
         return
 
-    # Build the args directory if we need it
+    package_map = parse_packages(args.package)
+    if package_map is None:
+        # Invalid package map... Exit.
+        return
+
+    for key in package_map.keys():
+        if dependencies[key] is not None:
+            dependencies[key]["repo"] = package_map[key]
+        # else:
+        # TODO warn, unused package in packages.txt
+
+    # Build the output directory if we need it
     if not os.path.exists(args.directory):
         os.mkdir(args.directory)
+    else:
+        check_package_cache(args.directory, dependencies)
 
-    assets = {}
     for dep in dependencies.keys():
-        if package_map[dep] is None:
-            print("No package repository defined for '{dep}'".format(dep=dep))
-            continue
-        assets[dep] = download_dep(dep, dependencies[dep], package_map[dep], args.token, args.directory)
+        dependency = dependencies[dep]
+        print("Get dependency {dep} ({version})".format(dep=dep, version=dependency["version"]))
 
-    update_barrel_jungle(args.jungle, assets)
+        if dependency["repo"] is None:
+            print("No package repository defined check {package_file}'".format(package_file=args.package))
+            continue
+        if dependency["download"] is not True:
+            # We have a cached version and don't need to download
+            print("Using cached release {tag}".format(tag=dependency["tag"]))
+            continue
+
+        download_dep(dep, dependencies[dep], args.token, args.directory)
+
+    update_barrel_jungle(args.jungle, dependencies)
+    update_cache_file(args.directory, dependencies)
 
 
 if __name__ == "__main__":
