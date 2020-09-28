@@ -10,7 +10,7 @@ A github release driven Package Manager for Connect IQ barrels
 
 ### Application Repository Configuration
 
-The tool exepects to find various files in the repository to determine where to
+The tool expects to find various files in the repository to determine where to
 get dependancies from. The only non-standard ConnectIQ project file introduced is a
 package map file (packages.txt)
 
