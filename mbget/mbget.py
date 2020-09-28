@@ -2,7 +2,7 @@ from github import Github
 import requests
 import re
 import argparse
-import xml.etree.cElementTree as ET
+import xml.etree.cElementTree as Et
 import os
 
 BARREL_FILE = re.compile(r'^.+\.barrel$')
@@ -46,7 +46,7 @@ def parse_manifest(manifest_file):
     barrel_map = {}
     ns = {"iq": "http://www.garmin.com/xml/connectiq"}
 
-    tree = ET.ElementTree(file=manifest_file)
+    tree = Et.ElementTree(file=manifest_file)
     root = tree.getroot()
     if root.tag != "{{{iq}}}manifest".format(iq=ns["iq"]):
         print("Invalid manifest XML provided '{file}'".format(file=manifest_file))

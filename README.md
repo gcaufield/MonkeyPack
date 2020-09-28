@@ -11,7 +11,7 @@ A github release driven Package Manager for Connect IQ barrels
 ### Application Repository Configuration
 
 The tool expects to find various files in the repository to determine where to
-get dependancies from. The only non-standard ConnectIQ project file introduced is a
+get dependencies from. The only non-standard ConnectIQ project file introduced is a
 package map file (packages.txt)
 
 ```txt
@@ -43,7 +43,7 @@ here to provide context for the package map file.
 #### Package Map File
 
 The package map file is a text file that is used to map `manifest.xml`
-dependencies onto github repositories that the dependancy can be retrieved
+dependencies onto github repositories that the dependency can be retrieved
 from.
 
 ```txt
