@@ -1,11 +1,12 @@
-from github import Github
-import requests
-import re
 import argparse
-import xml.etree.cElementTree as Et
-import os
-import json
 import hashlib
+import json
+import os
+import re
+import xml.etree.cElementTree as Et
+
+import requests
+from github import Github
 
 BARREL_FILE = re.compile(r'^.+\.barrel$')
 
@@ -29,7 +30,8 @@ def parse_packages(package_file):
                     if len(words) == 2:
                         package_map[words[0].rstrip()] = words[1].rstrip()
                     else:
-                        print("Poorly formatted package map on line {line_num}: {line}".format(line_num=i, line=line))
+                        print("Poorly formatted package map on line {line_num}: {line}".format(
+                            line_num=i, line=line))
                         return None
     except FileNotFoundError:
         print("Package file '{file}' not found".format(file=package_file))
@@ -55,7 +57,7 @@ def parse_manifest(manifest_file):
         return None
 
     for dep in root.findall(".//iq:barrels/iq:depends", namespaces=ns):
-        barrel_map[dep.attrib["name"]] = {"version": dep.attrib["version"], "download" : True}
+        barrel_map[dep.attrib["name"]] = {"version": dep.attrib["version"], "download": True}
 
     return barrel_map
 
@@ -238,7 +240,8 @@ def download_dep(dep, data, token, barrel_dir):
         # Matching tag download the barrels
         for asset in release.get_assets():
             if BARREL_FILE.match(asset.name) is not None:
-                print("Downloading asset {asset} from release {rel}".format(asset=asset.name, rel=release.tag_name))
+                print("Downloading asset {asset} from release {rel}".format(asset=asset.name,
+                                                                            rel=release.tag_name))
 
                 # Found a barrel file, Download it.
                 headers = {'Accept': 'application/octet-stream'}
@@ -284,10 +287,13 @@ def update_barrel_jungle(file, barrels):
 def main():
     parser = argparse.ArgumentParser(description='Connect IQ Package Manager')
     parser.add_argument('-t', '--token', nargs=1, help='Github API token for requests')
-    parser.add_argument('-m', '--manifest', default='manifest.xml', help='Specify application manifest')
-    parser.add_argument('-p', '--package', default='packages.txt', help='Specify the package map text file')
+    parser.add_argument('-m', '--manifest', default='manifest.xml',
+                        help='Specify application manifest')
+    parser.add_argument('-p', '--package', default='packages.txt',
+                        help='Specify the package map text file')
     parser.add_argument('-j', '--jungle', default='barrels.jungle', help='Barrel Jungle file')
-    parser.add_argument('-o', '--directory', default='barrels', help='Specify directory to store barrels in')
+    parser.add_argument('-o', '--directory', default='barrels',
+                        help='Specify directory to store barrels in')
     args = parser.parse_args()
 
     dependencies = parse_manifest(args.manifest)
@@ -321,7 +327,8 @@ def main():
         print("Get dependency {dep} ({version})".format(dep=dep, version=dependency["version"]))
 
         if dependency["repo"] is None:
-            print("No package repository defined check {package_file}'".format(package_file=args.package))
+            print("No package repository defined check {package_file}'".format(
+                package_file=args.package))
             continue
         if dependency["download"] is not True:
             # We have a cached version and don't need to download
