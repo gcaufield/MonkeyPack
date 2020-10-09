@@ -13,7 +13,7 @@ requires = [
     ]
 
 setup(name='mbpkg',
-      version='0.2.0',
+      version='1.0.0',
       description='Connect IQ Package Manager',
       long_description=readme,
       long_description_content_type='text/markdown',
