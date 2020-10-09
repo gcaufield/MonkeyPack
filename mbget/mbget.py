@@ -127,7 +127,7 @@ def version_matches_requirement(version, requirement):
     :param requirement:
     :return:
     """
-    tag_match = re.compile("^v{version}".format(version=requirement))
+    tag_match = re.compile("^v?{version}".format(version=requirement))
     if tag_match.match(version) is None:
         return False
 
@@ -284,18 +284,7 @@ def update_barrel_jungle(file, barrels):
         f.write("base.barrelPath = {barrel_path}".format(barrel_path=barrel_path))
 
 
-def main():
-    parser = argparse.ArgumentParser(description='Connect IQ Package Manager')
-    parser.add_argument('-t', '--token', nargs=1, help='Github API token for requests')
-    parser.add_argument('-m', '--manifest', default='manifest.xml',
-                        help='Specify application manifest')
-    parser.add_argument('-p', '--package', default='packages.txt',
-                        help='Specify the package map text file')
-    parser.add_argument('-j', '--jungle', default='barrels.jungle', help='Barrel Jungle file')
-    parser.add_argument('-o', '--directory', default='barrels',
-                        help='Specify directory to store barrels in')
-    args = parser.parse_args()
-
+def update(args):
     dependencies = parse_manifest(args.manifest)
     if dependencies is None:
         # Invalid manifest
@@ -339,6 +328,28 @@ def main():
 
     update_barrel_jungle(args.jungle, dependencies)
     update_cache_file(args.directory, dependencies)
+
+
+def main():
+    parser = argparse.ArgumentParser(description='Connect IQ Package Manager')
+    parser.add_argument('-t', '--token', nargs=1, help='Github API token for requests')
+    parser.add_argument('-m', '--manifest', default='manifest.xml',
+                        help='Specify application manifest')
+    parser.add_argument('-p', '--package', default='packages.txt',
+                        help='Specify the package map text file')
+    parser.add_argument('-j', '--jungle', default='barrels.jungle', help='Barrel Jungle file')
+    parser.add_argument('-o', '--directory', default='barrels',
+                        help='Specify directory to store barrels in')
+    parser.set_defaults(func=None)
+    subparsers = parser.add_subparsers()
+    update_parser = subparsers.add_parser('update', help='Download and update dependencies')
+    update_parser.set_defaults(func=update)
+
+    args = parser.parse_args()
+    if args.func is not None:
+        args.func(args)
+    else:
+        parser.print_help()
 
 
 if __name__ == "__main__":
