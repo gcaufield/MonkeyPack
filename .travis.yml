@@ -1,9 +1,18 @@
 language: python
 python:
-  - "3.7"
+- '3.7'
 install:
-  - pip install pipenv
-  - pipenv install
+- pip install pipenv
+- pipenv install
 script:
-  - python setup.py sdist bdist_wheel
-
+- python setup.py sdist bdist_wheel
+deploy:
+  provider: pypi
+  username: "__token__"
+  password:
+    secure: "VzfH0tuWfWYnLQnONUvcLgbneyrHTrP5c43kOqBDiFFAii6ypiMHq5C3NTEpY9Y7G8NtbZuRhyALEOlgVd7mmvV04eZpd3QaSx7qW7U2qD1ayKOImhdSHA67yOb9w2Zipi0J3jDTXceUy/scAkfYRADnHSeeuCEs9dSP2VgMJaQjtS2itNxZGcoVA5DWuHn/km4XwmZ1A+0Z4mUwNNAd29yhwgtzUJOLuXH6Gy4EzEi4uSRvNmwuVZfL18nWMkUVGbAeoRQTfS8bZ9yEwAZ0jHSwS8FyA4dTj9rd8bNpuefANgKoA33I7CoRNfHLEH2oJjwkqv8dig053YoYuCr10AKgpCa/XDcjrd+eucmSrHiO2qk+tp4Nuypcd/y6OS21ka7XkPyGbafR6SK4DYFRyOhdTIfb9oFiIeUecc49A9XvnbBBDcUvL41HjRZ7zyuymEKUSApkvKhnbODPqbFCHHygKNtA1rAif6KV6Ar9QToxKIDw5wpj8I650ApEuN4WRn7TnmIwrl1GNv61fEPCGkgUoU80nTc6VilmqxUeyIWnyMgJHxy+kdGjOzcZc89DK4GNnLx1qcjfUxPk4Mu0Dw9XGW9aEl+JC3mOXwOb9dxi8ip8T8VWBHLTvlMNmn3hjShUPaVyTk7vvUWhPfrEzHEikhNHyblcKJ8qI5fgZI4="
+  on:
+    tags: true
+  distributions: "sdist bdist_wheel"
+  skip_existing: true
+  skip_cleanup: true
