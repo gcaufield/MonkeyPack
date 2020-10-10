@@ -3,331 +3,475 @@ import hashlib
 import json
 import os
 import re
-import xml.etree.cElementTree as Et
+import xml.etree.ElementTree as Et
+from typing import TextIO, BinaryIO, List
 
 import requests
-from github import Github
-
-BARREL_FILE = re.compile(r'^.+\.barrel$')
+from github import Github, GitRelease, GitReleaseAsset
 
 
-def parse_packages(package_file):
+class Error(Exception):
     """
-    Parse a map of packages to Github repos out of a provided package map text file
-
-    :param package_file: The package map file
-    :return: Dictionary mapping Barrel Dependencies to Github repositories
+    Base Class for exceptions in the module
     """
-    package_map = {}
-    try:
-        with open(package_file, 'r') as f:
-            i = 0
-            for line in f.readlines():
-                i += 1
-                line = line.rstrip()
-                if len(line) > 0:
-                    words = line.split("=>")
-                    if len(words) == 2:
-                        package_map[words[0].rstrip()] = words[1].rstrip()
-                    else:
-                        print("Poorly formatted package map on line {line_num}: {line}".format(
-                            line_num=i, line=line))
-                        return None
-    except FileNotFoundError:
-        print("Package file '{file}' not found".format(file=package_file))
-        return None
 
-    return package_map
+    def __init__(self, message: str):
+        self.message = message
 
 
-def parse_manifest(manifest_file):
-    """
-    Parse a ConnectIQ Manifest file to access the declared barrel dependencies and versions
+class ManifestError(Error):
+    def __init__(self, message):
+        Error.__init__(self, message)
 
-    :param manifest_file: Path to the project manifest file
-    :return: A map of packages to version expectations
-    """
-    barrel_map = {}
+
+class UpdateError(Error):
+    """An Update specific error"""
+
+    def __init__(self, message):
+        Error.__init__(self, message)
+
+
+class Config(object):
+    def __init__(self, args):
+        self.__output_dir = args.directory
+        self.__jungle = args.jungle
+
+    @property
+    def jungle(self):
+        return self.__jungle
+
+    @property
+    def barrel_dir(self):
+        return self.__output_dir
+
+    def prepare_project_dir(self) -> None:
+        """
+        Put the project dir into a state where mbget can assume that all output
+        locations are valid
+        :return:
+        """
+        self.__build_output_dir()
+
+    def open_file(self, name, mode, callback) -> None:
+        with open(name, mode) as f:
+            callback(f)
+
+    def __build_output_dir(self):
+        """
+        Builds the output dir if its required.
+
+        :return:
+        """
+        if not os.path.exists(self.__output_dir):
+            os.mkdir(self.__output_dir)
+
+    def read_file_content(self, file, callback):
+        with open(file, "r") as f:
+            callback(f)
+
+    def write_text_file(self, file, callback):
+        with open(file, "w") as f:
+            callback(f)
+
+
+class Version(object):
+
+    def __init__(self, version: str):
+        self.version = version
+
+    def __str__(self) -> str:
+        return self.version
+
+    def matches(self, other) -> bool:
+        """
+
+        :param other:
+        :return:
+        """
+        tag_match = re.compile("^v?{version}".format(version=self.version))
+        if tag_match.match(other) is None:
+            return False
+
+        return True
+
+
+class Dependency(object):
+    def __init__(self, package_name: str):
+        self.__package_name = package_name
+        self.__required_version = None
+        self.__repo = None
+        self.__barrel_name = None
+        pass
+
+    def __eq__(self, other):
+        if other is not Dependency:
+            return False
+
+        return other.__package_name == self.__package_name and \
+               other.__required_version == self.__required_version and \
+               other.__repo == self.__repo
+
+    @property
+    def package_name(self) -> str:
+        return self.__package_name
+
+    @property
+    def version(self) -> Version:
+        return self.__required_version
+
+    def set_version(self, version: str) -> None:
+        self.__required_version = Version(version)
+
+    @property
+    def repo(self) -> str:
+        return self.__repo
+
+    def set_repo(self, repo: str) -> None:
+        self.__repo = repo
+
+    @property
+    def barrel_name(self) -> str:
+        return self.__barrel_name
+
+    def set_barrel_name(self, name):
+        self.__barrel_name = name
+
+
+class Manifest(object):
     ns = {"iq": "http://www.garmin.com/xml/connectiq"}
 
-    tree = Et.ElementTree(file=manifest_file)
-    root = tree.getroot()
-    if root.tag != "{{{iq}}}manifest".format(iq=ns["iq"]):
-        print("Invalid manifest XML provided '{file}'".format(file=manifest_file))
-        return None
+    def __init__(self, manifest_stream: TextIO):
+        self.root = Et.ElementTree(file=manifest_stream).getroot()
+        self.__validate_manifest()
+        self.__build_version_map()
 
-    for dep in root.findall(".//iq:barrels/iq:depends", namespaces=ns):
-        barrel_map[dep.attrib["name"]] = {"version": dep.attrib["version"], "download": True}
+    def get_depends(self):
+        return self.version_map.keys()
 
-    return barrel_map
+    def __validate_manifest(self) -> None:
+        """
+
+        :return:
+        """
+        if self.root.tag != "{{{iq}}}manifest".format(iq=self.ns["iq"]):
+            raise Error("Invalid manifest XML")
+
+    def __build_version_map(self):
+        self.version_map = {}
+        for dep in self.root.findall(".//iq:barrels/iq:depends", namespaces=self.ns):
+            self.version_map[dep.attrib["name"]] = dep.attrib["version"]
+
+    def get_required_version(self, dep: str) -> str:
+        return self.version_map[dep]
 
 
-def hash_file(path):
-    """
+class Packages(object):
+    def __init__(self, package_file: TextIO):
+        self.package_map = {}
+        self.__parse_packages(package_file)
 
-    :param path:
-    :return:
-    """
+    def get_repo_for_package(self, package) -> str:
+        return self.package_map[package]
+
+    def __parse_packages(self, package_stream: TextIO):
+        i = 0
+        for line in package_stream.readlines():
+            i += 1
+            line = line.rstrip()
+            if len(line) > 0:
+                words = line.split("=>")
+                if len(words) == 2:
+                    self.package_map[words[0].rstrip()] = words[1].rstrip()
+                else:
+                    raise UpdateError(
+                        "Poorly formatted package map on line {line_num}: {line}".format(
+                            line_num=i, line=line))
+
+
+class FileHasher(object):
     BLOCK_SIZE = 65535
-    h = hashlib.sha256()
-    with open(path, 'rb') as f:
-        fb = f.read(BLOCK_SIZE)
+
+    def __init__(self):
+        pass
+
+    def match(self, file_path, expected_hash) -> bool:
+        return self.hash_file(file_path) == expected_hash
+
+    def hash_file(self, file_path):
+        """
+
+        :param file_path:
+        :return:
+        """
+        with open(file_path, 'rb') as f:
+            return self.__hash_file(f)
+
+    def __hash_file(self, f: BinaryIO) -> str:
+        h = hashlib.sha256()
+        fb = f.read(self.BLOCK_SIZE)
         while len(fb) > 0:
             h.update(fb)
-            fb = f.read(BLOCK_SIZE)
+            fb = f.read(self.BLOCK_SIZE)
 
-    return h.hexdigest()
-
-
-def load_cache_file(barrel_dir):
-    """
-
-    :param barrel_dir:
-    :return:
-    """
-    cache_file = os.path.join(barrel_dir, '.mbgetcache')
-    try:
-        with open(cache_file, 'r') as f:
-            cache = json.load(f)
-    except (OSError, json.JSONDecodeError):
-        # Couldn't open cache
-        return None
-
-    return cache
+        return h.hexdigest()
 
 
-def validate_cache(cache):
-    """
+class Cache(object):
+    def __init__(self, config: Config, hasher: FileHasher = FileHasher()):
+        self.cache = {}
+        self.hasher = hasher
+        self.__config = config
 
-    :type cache: dict
-    """
-    keys_to_remove = []
-    for key in cache.keys():
-        invalid_entry = False
-        cache_entry = cache[key]
+        self.__read_cache_file_if_exists()
+        self.__validate_cache()
+        self.__dirty = False
+
+    def __process_cache(self, file: TextIO):
         try:
-            if hash_file(cache_entry["asset"]) != cache_entry["hash"]:
-                invalid_entry = True
-        except OSError:
-            invalid_entry = True
+            self.cache = json.load(file)
+        except (OSError, json.JSONDecodeError):
+            # Couldn't open cache TODO add CacheError
+            raise Error("Couldn't read cache file")
 
-        if invalid_entry:
-            keys_to_remove.append(key)
+    def __read_cache_file_if_exists(self) -> None:
+        """
 
-    # Remove any invalid cache entries
-    for key in keys_to_remove:
-        cache.pop(key)
-    return
+        :param file:
+        :return:
+        """
+        if os.path.exists(self.__cache_file):
+            self.__config.open_file(self.__cache_file, "r", self.__process_cache)
 
+    def write_cache(self):
+        """
 
-def version_matches_requirement(version, requirement):
-    """
+        :param file:
+        :return:
+        """
+        self.__config.open_file(self.__cache_file, "w", lambda f: json.dump(self.cache, f))
+        self.__dirty = False
 
-    :param version:
-    :param requirement:
-    :return:
-    """
-    tag_match = re.compile("^v?{version}".format(version=requirement))
-    if tag_match.match(version) is None:
-        return False
+    def add_dependency(self, dependency: Dependency):
+        entry = {"asset": dependency.barrel_name,
+                 "hash": self.hasher.hash_file(dependency.barrel_name),
+                 "version": str(dependency.version)}
 
-    return True
+        self.cache[dependency.package_name] = entry
+        self.__dirty = True
 
+    def __validate_cache(self):
+        invalid_entries = []
+        for key in self.cache:
+            if not self.__asset_exists(key):
+                invalid_entries.append(key)
+            elif not self.__is_asset_valid(key):
+                invalid_entries.append(key)
 
-def cache_matches_dependency(cache, dependency):
-    """
+        for entry in invalid_entries:
+            self.cache.pop(entry)
 
-    :param cache:
-    :param dependency:
-    :return:
-    """
-    if not version_matches_requirement(cache["tag"], dependency["version"]):
-        return False
+    def __contains__(self, item: Dependency) -> bool:
+        if item.package_name not in self.cache:
+            return False
 
-    return True
+        cached_dep = self.cache[item.package_name]
+        return item.version.matches(cached_dep["version"])
 
+    @property
+    def __cache_file(self):
+        return os.path.join(self.__config.barrel_dir, '.mbgetcache')
 
-def check_package_cache(barrel_dir, dependencies):
-    """
+    def __asset_exists(self, key):
+        return os.path.exists(self.cache[key]["asset"])
 
-    :param barrel_dir:
-    :param dependencies:
-    :return:
-    """
-    cache = load_cache_file(barrel_dir)
+    def __is_asset_valid(self, key):
+        asset_path = self.cache[key]["asset"]
+        expected_hash = self.cache[key]["hash"]
+        return self.hasher.match(asset_path, expected_hash)
 
-    # Check if we loaded a cache
-    if cache is None:
-        return
-
-    validate_cache(cache)
-
-    for key in dependencies.keys():
-        dependency = dependencies[key]
-        if key not in cache:
-            # No cache entry for the required package
-            continue
-        if not cache_matches_dependency(cache[key], dependency):
-            # Cache entry doesn't match requirement
-            continue
-
-        # We got a cache hit, save the details and clear the download flag
-        dependency["tag"] = cache[key]["tag"]
-        dependency["asset"] = cache[key]["asset"]
-        dependency["download"] = False
-
-    return
+    def get_barrel_for_package(self, dep) -> str:
+        return self.cache[dep.package_name]["asset"]
 
 
-def update_cache_file(barrel_dir, packages):
-    """
+class BarrelAsset(object):
+    def __init__(self, asset_name: str, asset_version: str, asset_content: bytes):
+        self.__name = asset_name
+        self.__version = Version(asset_version)
+        self.__content = asset_content
 
-    :param barrel_dir:
-    :param packages:
-    :return:
-    """
-    cache = load_cache_file(barrel_dir)
+    @property
+    def name(self) -> str:
+        return self.__name
 
-    if cache is None:
-        # Previous cache didn't exist
-        cache = {}
+    @property
+    def version(self) -> Version:
+        return self.__version
 
-    for key in packages.keys():
-        package = packages[key]
-
-        # If the package wasn't downloaded don't add it to the cache
-        if not package["download"]:
-            continue
-
-        cache_entry = {"tag": package["tag"], "asset": package["asset"]}
-        try:
-            cache_entry["hash"] = hash_file(package["asset"])
-        except OSError:
-            # Something went wrong parsing the cache entry, don't return it
-            continue
-
-        cache[key] = cache_entry
-
-    cache_file = os.path.join(barrel_dir, '.mbgetcache')
-
-    # TODO Try/Except
-    with open(cache_file, 'w') as f:
-        json.dump(cache, f)
+    @property
+    def content(self) -> bytes:
+        return self.__content
 
 
-def download_dep(dep, data, token, barrel_dir):
-    """
+class GithubDownloader(object):
+    BARREL_FILE = re.compile(r'^.+\.barrel$')
 
-    :param dep:
-    :param data:
-    :param token:
-    :param barrel_dir:
-    :return:
-    """
-    if token is not None:
-        github = Github(token[0])
-    else:
-        github = Github()
+    def __init__(self, token: str = None):
+        self.__token = token
 
-    repo = github.get_repo(data["repo"])
+        if token is not None:
+            self.__github = Github(login_or_token=token)
+        else:
+            self.__github = Github()
 
-    # Search the releases for a version that we can use
-    for release in repo.get_releases():
-        if not version_matches_requirement(release.tag_name, data["version"]):
-            # Version does not match our requirement
-            continue
+    def download_barrel(self, dependency: Dependency) -> BarrelAsset:
+        release = self.__find_release(dependency)
+        asset = self.__get_barrel_asset(release)
 
+        print("Downloading asset {asset} from release {rel}".format(asset=asset.name,
+                                                                    rel=release.tag_name))
+
+        content = self.__request_barrel_content(asset)
+        return BarrelAsset(asset.name, release.tag_name, content)
+
+    def __request_barrel_content(self, asset: GitReleaseAsset) -> bytes:
+        # Found a barrel file, Download it.
+        headers = {'Accept': 'application/octet-stream'}
+
+        if self.__token is not None:
+            headers['Authorization'] = 'token {token}'.format(token=self.__token)
+
+        req = requests.get(asset.url, headers=headers)
+        return req.content
+
+    def __get_barrel_asset(self, release: GitRelease) -> GitReleaseAsset:
         # Matching tag download the barrels
         for asset in release.get_assets():
-            if BARREL_FILE.match(asset.name) is not None:
-                print("Downloading asset {asset} from release {rel}".format(asset=asset.name,
-                                                                            rel=release.tag_name))
+            if self.BARREL_FILE.match(asset.name) is not None:
+                return asset
 
-                # Found a barrel file, Download it.
-                headers = {'Accept': 'application/octet-stream'}
+        raise Error("No barrel asset found in release: {rel}".format(rel=release.tag_name))
 
-                if token is not None:
-                    headers['Authorization'] = 'token {token}'.format(token=token[0])
+    def __find_release(self, dependency: Dependency) -> GitRelease:
+        repo = self.__github.get_repo(dependency.repo)
 
-                req = requests.get(asset.url, headers=headers)
-                filename = os.path.join(barrel_dir, asset.name)
-                with open(filename, 'wb') as f:
-                    f.write(req.content)
-
-                # Save the asset name and the release tag
-                data["asset"] = filename
-                data["tag"] = release.tag_name
-                return
-
-        print("No asset available for version {version}".format(version=data["version"]))
-
-    print("Unable to find matching version {version}".format(version=data["version"]))
-    return None
-
-
-def update_barrel_jungle(file, barrels):
-    """
-
-    :param file:
-    :param barrels:
-    :return:
-    """
-    barrel_path = "$(base.barrelPath)"
-    with open(file, 'w') as f:
-        f.write('# Do not hand edit this auto generated file from mbget\n')
-        for key in barrels.keys():
-            asset = barrels[key]["asset"]
-            if asset is None:
+        # Search the releases for a version that we can use
+        for release in repo.get_releases():
+            if not dependency.version.matches(release.tag_name):
+                # Version does not match our requirement
                 continue
-            f.write('{name} = "{asset}"\n'.format(name=key, asset=asset))
-            barrel_path += ";$({name})".format(name=key)
-        f.write("base.barrelPath = {barrel_path}".format(barrel_path=barrel_path))
+            return release
+
+        raise Error("Unable to find matching version {version}".format(
+            version=dependency.version))
+
+
+class Project(object):
+    def __init__(self, manifest: Manifest, packages: Packages, cache: Cache, config: Config):
+        """
+        """
+        self.dependencies = dict()
+        self.manifest = manifest
+        self.packages = packages
+        self.__cache = cache
+        self.__config = config
+        self.__build_dependencies()
+
+    @property
+    def config(self) -> Config:
+        return self.__config
+
+    @property
+    def cache(self):
+        return self.__cache
+
+    @property
+    def uncached_dependencies(self):
+        deps = []
+        for dep in self.dependencies.values():
+            if dep not in self.__cache:
+                deps.append(dep)
+        return deps
+
+    def update_dependency(self, dependency: Dependency):
+        self.__cache.add_dependency(dependency)
+        self.__cache.write_cache()
+        self.__add_dependency(dependency)
+
+    def __write_barrel_jungle(self, file) -> None:
+        barrel_path = "$(base.barrelPath)"
+        file.write('# Do not hand edit this auto generated file from mbget\n')
+
+        for dep in self.dependencies.values():
+            file.write('{name} = "{asset}"\n'.format(name=dep.package_name, asset=dep.barrel_name))
+            barrel_path += ";$({name})".format(name=dep.package_name)
+
+        file.write("base.barrelPath = {barrel_path}".format(barrel_path=barrel_path))
+
+    def write_barrel_jungle(self) -> None:
+        """
+
+        :param file:
+        :param barrels:
+        :return:
+        """
+        self.__config.open_file(self.__config.jungle, 'w', self.__write_barrel_jungle)
+
+
+    def __build_dependencies(self):
+        for dep in self.manifest.get_depends():
+            self.__initialize_dependency(dep)
+
+    def __initialize_dependency(self, dep):
+        new_dep = Dependency(dep)
+        new_dep.set_version(self.manifest.get_required_version(dep))
+        new_dep.set_repo(self.packages.get_repo_for_package(dep))
+
+        if new_dep in self.__cache:
+            new_dep.set_barrel_name(self.__cache.get_barrel_for_package(new_dep))
+
+        self.__add_dependency(new_dep)
+
+    def __add_dependency(self, dep):
+        self.dependencies[dep.package_name] = dep
+
+
+
+class Update(object):
+    """Update handler"""
+
+    def __init__(self, project: Project, downloader: GithubDownloader = GithubDownloader()):
+        self.__downloader = downloader
+        self.__project = project
+
+    def update_project(self) -> None:
+        for dep in self.__project.uncached_dependencies:
+            self.__update_dependency(dep)
+
+        self.__project.write_barrel_jungle()
+
+    def __update_dependency(self, dep: Dependency) -> None:
+        self.__download_dependency_assets(dep)
+        self.__project.update_dependency(dep)
+
+    def __download_dependency_assets(self, dep: Dependency) -> None:
+        asset = self.__downloader.download_barrel(dep)
+        barrel_name = os.path.join(self.__project.config.barrel_dir, asset.name)
+        self.__project.config.open_file(barrel_name, "wb", lambda f: f.write(asset.content))
+        dep.set_barrel_name(barrel_name)
 
 
 def update(args):
-    dependencies = parse_manifest(args.manifest)
-    if dependencies is None:
-        # Invalid manifest
-        return
+    config = Config(args)
 
-    if len(dependencies) == 0:
-        print("No dependencies to download")
-        return
+    manifest = Manifest(args.manifest)
+    with open(args.package, 'r') as package_f:
+        packages = Packages(package_f)
 
-    package_map = parse_packages(args.package)
-    if package_map is None:
-        # Invalid package map... Exit.
-        return
+    cache = Cache(config)
+    project = Project(manifest, packages, cache, config)
+    updater = Update(project)
 
-    for key in package_map.keys():
-        if dependencies[key] is not None:
-            dependencies[key]["repo"] = package_map[key]
-        # else:
-        # TODO warn, unused package in packages.txt
-
-    # Build the output directory if we need it
-    if not os.path.exists(args.directory):
-        os.mkdir(args.directory)
-    else:
-        check_package_cache(args.directory, dependencies)
-
-    for dep in dependencies.keys():
-        dependency = dependencies[dep]
-        print("Get dependency {dep} ({version})".format(dep=dep, version=dependency["version"]))
-
-        if dependency["repo"] is None:
-            print("No package repository defined check {package_file}'".format(
-                package_file=args.package))
-            continue
-        if dependency["download"] is not True:
-            # We have a cached version and don't need to download
-            print("Using cached release {tag}".format(tag=dependency["tag"]))
-            continue
-
-        download_dep(dep, dependencies[dep], args.token, args.directory)
-
-    update_barrel_jungle(args.jungle, dependencies)
-    update_cache_file(args.directory, dependencies)
+    updater.update_project()
 
 
 def main():
