@@ -43,7 +43,7 @@ setup(name='mbpkg',
       python_requires='>=3.5.*, < 4',
       install_requires=requires,
       #test_reqiures=test_requires,
-      test_suite='tests'.
+      test_suite='tests',
       entry_points={
           'console_scripts': [
               'mbget=mbget.mbget:main'
