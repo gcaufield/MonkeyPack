@@ -11,7 +11,9 @@ class TestManifest(unittest.TestCase):
         manifest_str = r'<iq:manifest xmlns:iq="http://www.garmin.com/xml/connectiq">' \
                        r'<iq:application><iq:products/><iq:permissions/><iq:languages/><iq:barrels>'
         for key in depends.keys():
-            manifest_str += '<iq:depends name="{name}" version="{version}"/>'.format(name=key, version=depends[key])
+            manifest_str += '<iq:depends name="{name}" version="{version}"/>'.format(
+                name=key,
+                version=depends[key])
         return manifest_str + '</iq:barrels></iq:application></iq:manifest>'
 
     def test_get_depends_returns_single_depends_element(self):

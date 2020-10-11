@@ -22,10 +22,6 @@ class Config(object):
         """
         self.__build_output_dir()
 
-    def open_file(self, name, mode, callback) -> None:
-        with open(name, mode) as f:
-            callback(f)
-
     def __build_output_dir(self):
         """
         Builds the output dir if its required.
@@ -35,10 +31,7 @@ class Config(object):
         if not os.path.exists(self.__output_dir):
             os.mkdir(self.__output_dir)
 
-    def read_file_content(self, file, callback):
-        with open(file, "r") as f:
-            callback(f)
-
-    def write_text_file(self, file, callback):
-        with open(file, "w") as f:
+    @staticmethod
+    def open_file(name, mode, callback) -> None:
+        with open(name, mode) as f:
             callback(f)

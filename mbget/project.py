@@ -21,10 +21,6 @@ class Project(object):
         return self.__config
 
     @property
-    def cache(self):
-        return self.__cache
-
-    @property
     def uncached_dependencies(self):
         deps = []
         for dep in self.dependencies.values():
@@ -49,10 +45,7 @@ class Project(object):
 
     def write_barrel_jungle(self) -> None:
         """
-
-        :param file:
-        :param barrels:
-        :return:
+        Write the barrel.jungle file out to disk
         """
         self.__config.open_file(self.__config.jungle, 'w', self.__write_barrel_jungle)
 

@@ -1,5 +1,6 @@
 from mbget.version import Version
 
+
 class BarrelAsset(object):
     def __init__(self, asset_name: str, asset_version: str, asset_content: bytes):
         self.__name = asset_name

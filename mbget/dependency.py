@@ -14,8 +14,8 @@ class Dependency(object):
             return False
 
         return other.__package_name == self.__package_name and \
-               other.__required_version == self.__required_version and \
-               other.__repo == self.__repo
+            other.__required_version == self.__required_version and \
+            other.__repo == self.__repo
 
     @property
     def package_name(self) -> str:
@@ -41,3 +41,4 @@ class Dependency(object):
 
     def set_barrel_name(self, name):
         self.__barrel_name = name
+

@@ -27,18 +27,14 @@ class Cache(object):
 
     def __read_cache_file_if_exists(self) -> None:
         """
-
-        :param file:
-        :return:
+        Open and read the cache file if it exists
         """
         if os.path.exists(self.__cache_file):
             self.__config.open_file(self.__cache_file, "r", self.__process_cache)
 
     def write_cache(self):
         """
-
-        :param file:
-        :return:
+        Write the cache file out to disk
         """
         self.__config.open_file(self.__cache_file, "w", lambda f: json.dump(self.cache, f))
         self.__dirty = False
