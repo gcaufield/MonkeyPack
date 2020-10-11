@@ -28,7 +28,7 @@ def main():
                         help='Specify application manifest')
     parser.add_argument('-p', '--package', default='packages.txt',
                         help='Specify the package map text file')
-    parser.add_argument('-j', '--jungle', default='mbpkg.jungle', help='Barrel Jungle file')
+    parser.add_argument('-j', '--jungle', default='barrels.jungle', help='Barrel Jungle file')
     parser.add_argument('-o', '--directory', default='.mbpkg',
                         help='Specify directory to store barrels in')
     parser.set_defaults(func=None)
