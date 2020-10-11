@@ -44,7 +44,7 @@ setup(name='mbpkg',
       install_requires=requires,
       entry_points={
           'console_scripts': [
-              'mbget=mbget.mbget:main'
+              'mbget=mbget.main:main'
               ]
       }
       )
