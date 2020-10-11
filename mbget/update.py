@@ -13,6 +13,8 @@ class Update(object):
         self.__project = project
 
     def update_project(self) -> None:
+        self.__project.config.prepare_project_dir()
+
         for dep in self.__project.uncached_dependencies:
             self.__update_dependency(dep)
 

@@ -12,10 +12,9 @@ def run_update(args):
     config = Config(args)
 
     manifest = Manifest(args.manifest)
-    with open(args.package, 'r') as package_f:
-        packages = Packages(package_f)
-
+    packages = Packages(config)
     cache = Cache(config)
+
     project = Project(manifest, packages, cache, config)
     updater = Update(project)
 

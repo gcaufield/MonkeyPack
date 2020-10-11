@@ -3,12 +3,17 @@ import os
 
 class Config(object):
     def __init__(self, args):
+        self.__package = args.package
         self.__output_dir = args.directory
         self.__jungle = args.jungle
 
     @property
     def jungle(self):
         return self.__jungle
+
+    @property
+    def package(self):
+        return self.__package
 
     @property
     def barrel_dir(self):

@@ -1,19 +1,20 @@
 from typing import TextIO
 
+from mbget.config import Config
 from mbget.errors import UpdateError
 
 
 class Packages(object):
-    def __init__(self, package_file: TextIO):
+    def __init__(self, config: Config):
         self.package_map = {}
-        self.__parse_packages(package_file)
+        config.open_file(config.package, "r", self.__parse_packages)
 
     def get_repo_for_package(self, package) -> str:
         return self.package_map[package]
 
-    def __parse_packages(self, package_stream: TextIO):
+    def __parse_packages(self, f: TextIO):
         i = 0
-        for line in package_stream.readlines():
+        for line in f.readlines():
             i += 1
             line = line.rstrip()
             if len(line) > 0:
