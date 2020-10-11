@@ -1,6 +1,6 @@
 from typing import TextIO
 
-from impl.errors import UpdateError
+from mbget.errors import UpdateError
 
 
 class Packages(object):

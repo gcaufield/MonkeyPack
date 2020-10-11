@@ -1,8 +1,8 @@
 import os
 
-from impl.dependency import Dependency
-from impl.github_downloader import GithubDownloader
-from impl.project import Project
+from mbget.dependency import Dependency
+from mbget.github_downloader import GithubDownloader
+from mbget.project import Project
 
 
 class Update(object):

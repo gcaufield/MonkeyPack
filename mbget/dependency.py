@@ -1,4 +1,4 @@
-from impl.version import Version
+from mbget.version import Version
 
 
 class Dependency(object):

@@ -1,8 +1,8 @@
-from impl.cache import Cache
-from impl.manifest import Manifest
-from impl.packages import Packages
-from impl.dependency import Dependency
-from impl.config import Config
+from mbget.cache import Cache
+from mbget.manifest import Manifest
+from mbget.packages import Packages
+from mbget.dependency import Dependency
+from mbget.config import Config
 
 
 class Project(object):
@@ -56,20 +56,19 @@ class Project(object):
         """
         self.__config.open_file(self.__config.jungle, 'w', self.__write_barrel_jungle)
 
-
     def __build_dependencies(self):
         for dep in self.manifest.get_depends():
             self.__initialize_dependency(dep)
 
-    def __initialize_dependency(self, dep):
-        new_dep = Dependency(dep)
-        new_dep.set_version(self.manifest.get_required_version(dep))
-        new_dep.set_repo(self.packages.get_repo_for_package(dep))
+    def __initialize_dependency(self, package_name: str) -> None:
+        new_dep = Dependency(package_name)
+        new_dep.set_version(self.manifest.get_required_version(package_name))
+        new_dep.set_repo(self.packages.get_repo_for_package(package_name))
 
         if new_dep in self.__cache:
             new_dep.set_barrel_name(self.__cache.get_barrel_for_package(new_dep))
 
         self.__add_dependency(new_dep)
 
-    def __add_dependency(self, dep):
+    def __add_dependency(self, dep: Dependency) -> None:
         self.dependencies[dep.package_name] = dep

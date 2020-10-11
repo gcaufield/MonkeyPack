@@ -2,12 +2,14 @@ import json
 import os
 from typing import TextIO
 
-from impl.file_hasher import FileHasher
-from impl import dependency, errors, config
+from mbget.config import Config
+from mbget.dependency import Dependency
+from mbget.errors import Error
+from mbget.file_hasher import FileHasher
 
 
 class Cache(object):
-    def __init__(self, config: config, hasher: FileHasher = FileHasher()):
+    def __init__(self, config: Config, hasher: FileHasher = FileHasher()):
         self.cache = {}
         self.hasher = hasher
         self.__config = config
@@ -21,7 +23,7 @@ class Cache(object):
             self.cache = json.load(file)
         except (OSError, json.JSONDecodeError):
             # Couldn't open cache TODO add CacheError
-            raise errors.Error("Couldn't read cache file")
+            raise Error("Couldn't read cache file")
 
     def __read_cache_file_if_exists(self) -> None:
         """
@@ -41,7 +43,7 @@ class Cache(object):
         self.__config.open_file(self.__cache_file, "w", lambda f: json.dump(self.cache, f))
         self.__dirty = False
 
-    def add_dependency(self, dependency: dependency):
+    def add_dependency(self, dependency: Dependency):
         entry = {"asset": dependency.barrel_name,
                  "hash": self.hasher.hash_file(dependency.barrel_name),
                  "version": str(dependency.version)}
@@ -60,7 +62,7 @@ class Cache(object):
         for entry in invalid_entries:
             self.cache.pop(entry)
 
-    def __contains__(self, item: dependency) -> bool:
+    def __contains__(self, item: Dependency) -> bool:
         if item.package_name not in self.cache:
             return False
 

@@ -1,14 +1,14 @@
 import argparse
 
-from impl.cache import Cache
-from impl.config import Config
-from impl.manifest import Manifest
-from impl.packages import Packages
-from impl.project import Project
-from impl.update import Update
+from mbget.cache import Cache
+from mbget.config import Config
+from mbget.manifest import Manifest
+from mbget.packages import Packages
+from mbget.project import Project
+from mbget.update import Update
 
 
-def update(args):
+def run_update(args):
     config = Config(args)
 
     manifest = Manifest(args.manifest)
@@ -35,7 +35,7 @@ def main():
     parser.set_defaults(func=None)
     subparsers = parser.add_subparsers()
     update_parser = subparsers.add_parser('update', help='Download and update dependencies')
-    update_parser.set_defaults(func=update)
+    update_parser.set_defaults(func=run_update)
 
     args = parser.parse_args()
     if args.func is not None:

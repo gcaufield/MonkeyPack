@@ -1,7 +1,7 @@
 from typing import TextIO
 from xml.etree import ElementTree as Et
 
-from impl.errors import Error
+from mbget.errors import Error
 
 
 class Manifest(object):
@@ -13,7 +13,7 @@ class Manifest(object):
         self.__build_version_map()
 
     def get_depends(self):
-        return self.version_map.keys()
+        return list(self.version_map.keys())
 
     def __validate_manifest(self) -> None:
         """

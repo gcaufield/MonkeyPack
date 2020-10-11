@@ -3,9 +3,9 @@ import re
 import requests
 from github import Github, GitReleaseAsset, GitRelease
 
-from impl.barrel_asset import BarrelAsset
-from impl.errors import Error
-from impl.dependency import Dependency
+from mbget.barrel_asset import BarrelAsset
+from mbget.errors import Error
+from mbget.dependency import Dependency
 
 
 class GithubDownloader(object):

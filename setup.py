@@ -46,7 +46,7 @@ setup(name='mbpkg',
       test_suite='tests',
       entry_points={
           'console_scripts': [
-              'mbget=mbget.mbget:main'
+              'mbget=mbget.main:main'
               ]
       }
       )
