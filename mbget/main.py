@@ -22,18 +22,31 @@ def run_update(args):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Connect IQ Package Manager')
-    parser.add_argument('-t', '--token', nargs=1, help='Github API token for requests')
-    parser.add_argument('-m', '--manifest', default='manifest.xml',
-                        help='Specify application manifest')
-    parser.add_argument('-p', '--package', default='packages.txt',
-                        help='Specify the package map text file')
-    parser.add_argument('-j', '--jungle', default='barrels.jungle', help='Barrel Jungle file')
-    parser.add_argument('-o', '--directory', default='.mbpkg',
-                        help='Specify directory to store barrels in')
+    parser = argparse.ArgumentParser(description="Connect IQ Package Manager")
+    parser.add_argument("-t", "--token", nargs=1, help="Github API token for requests")
+    parser.add_argument(
+        "-m", "--manifest", default="manifest.xml", help="Specify application manifest"
+    )
+    parser.add_argument(
+        "-p",
+        "--package",
+        default="packages.txt",
+        help="Specify the package map text file",
+    )
+    parser.add_argument(
+        "-j", "--jungle", default="barrels.jungle", help="Barrel Jungle file"
+    )
+    parser.add_argument(
+        "-o",
+        "--directory",
+        default=".mbpkg",
+        help="Specify directory to store barrels in",
+    )
     parser.set_defaults(func=None)
     subparsers = parser.add_subparsers()
-    update_parser = subparsers.add_parser('update', help='Download and update dependencies')
+    update_parser = subparsers.add_parser(
+        "update", help="Download and update dependencies"
+    )
     update_parser.set_defaults(func=run_update)
 
     args = parser.parse_args()

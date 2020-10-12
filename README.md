@@ -1,6 +1,9 @@
 # MonkeyPack
 
-[![Build Status](https://travis-ci.com/gcaufield/MonkeyPack.svg?branch=master)](https://travis-ci.com/gcaufield/MonkeyPack) [![PyPI version](https://badge.fury.io/py/mbpkg.svg)](https://badge.fury.io/py/mbpkg) [![codecov](https://codecov.io/gh/gcaufield/MonkeyPack/branch/master/graph/badge.svg)](https://codecov.io/gh/gcaufield/MonkeyPack)
+[![Build Status](https://travis-ci.com/gcaufield/MonkeyPack.svg?branch=master)](https://travis-ci.com/gcaufield/MonkeyPack)
+[![PyPI version](https://badge.fury.io/py/mbpkg.svg)](https://badge.fury.io/py/mbpkg)
+[![codecov](https://codecov.io/gh/gcaufield/MonkeyPack/branch/master/graph/badge.svg)](https://codecov.io/gh/gcaufield/MonkeyPack)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
 
 A github release driven Package Manager for Connect IQ barrels

@@ -11,7 +11,7 @@ from mbget.dependency import Dependency
 
 
 class GithubDownloader(object):
-    BARREL_FILE = re.compile(r'^.+\.barrel$')
+    BARREL_FILE = re.compile(r"^.+\.barrel$")
 
     def __init__(self, token: str = None):
         self.__token = token
@@ -25,18 +25,21 @@ class GithubDownloader(object):
         release = self.__find_release(dependency)
         asset = self.__get_barrel_asset(release)
 
-        print("Downloading asset {asset} from release {rel}".format(asset=asset.name,
-                                                                    rel=release.tag_name))
+        print(
+            "Downloading asset {asset} from release {rel}".format(
+                asset=asset.name, rel=release.tag_name
+            )
+        )
 
         content = self.__request_barrel_content(asset)
         return BarrelAsset(asset.name, release.tag_name, content)
 
     def __request_barrel_content(self, asset: GitReleaseAsset) -> bytes:
         # Found a barrel file, Download it.
-        headers = {'Accept': 'application/octet-stream'}
+        headers = {"Accept": "application/octet-stream"}
 
         if self.__token is not None:
-            headers['Authorization'] = 'token {token}'.format(token=self.__token)
+            headers["Authorization"] = "token {token}".format(token=self.__token)
 
         req = requests.get(asset.url, headers=headers)
         return req.content
@@ -47,7 +50,9 @@ class GithubDownloader(object):
             if self.BARREL_FILE.match(asset.name) is not None:
                 return asset
 
-        raise Error("No barrel asset found in release: {rel}".format(rel=release.tag_name))
+        raise Error(
+            "No barrel asset found in release: {rel}".format(rel=release.tag_name)
+        )
 
     def __find_release(self, dependency: Dependency) -> GitRelease:
         assert dependency.repo is not None
@@ -62,5 +67,8 @@ class GithubDownloader(object):
                 continue
             return release
 
-        raise Error("Unable to find matching version {version}".format(
-            version=dependency.version))
+        raise Error(
+            "Unable to find matching version {version}".format(
+                version=dependency.version
+            )
+        )

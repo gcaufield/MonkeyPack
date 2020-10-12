@@ -36,13 +36,17 @@ class Cache(object):
         """
         Write the cache file out to disk
         """
-        self.__config.open_file(self.__cache_file, "w", lambda f: json.dump(self.cache, f))
+        self.__config.open_file(
+            self.__cache_file, "w", lambda f: json.dump(self.cache, f)
+        )
         self.__dirty = False
 
     def add_dependency(self, dependency: Dependency):
-        entry = {"asset": str(dependency.barrel_name),
-                 "hash": self.hasher.hash_file(dependency.barrel_name),
-                 "version": str(dependency.version)}
+        entry = {
+            "asset": str(dependency.barrel_name),
+            "hash": self.hasher.hash_file(dependency.barrel_name),
+            "version": str(dependency.version),
+        }
 
         self.cache[dependency.package_name] = entry
         self.__dirty = True
@@ -69,7 +73,7 @@ class Cache(object):
 
     @property
     def __cache_file(self):
-        return os.path.join(self.__config.barrel_dir, '.mbgetcache')
+        return os.path.join(self.__config.barrel_dir, ".mbgetcache")
 
     def __asset_exists(self, key):
         return os.path.exists(self.cache[key]["asset"])

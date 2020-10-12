@@ -4,7 +4,6 @@ from mbget.version import Version
 
 
 class TestVersion(unittest.TestCase):
-
     def test_version_matches(self):
         ver = Version("0.2.4")
         self.assertTrue(ver.matches("0.2.4"))
@@ -43,4 +42,3 @@ class TestVersion(unittest.TestCase):
     def test_version_ne_different_type(self):
         ver = Version("0.4.5")
         self.assertNotEqual(34, ver)
-

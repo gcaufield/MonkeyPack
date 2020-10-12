@@ -3,7 +3,6 @@ from typing import Any
 
 
 class Version(object):
-
     def __init__(self, version: str):
         self.version = version
 

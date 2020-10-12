@@ -17,7 +17,7 @@ class FileHasher(object):
         :param file_path:
         :return:
         """
-        with open(file_path, 'rb') as f:
+        with open(file_path, "rb") as f:
             return self.__hash_file(f)
 
     def __hash_file(self, f: BinaryIO) -> str:

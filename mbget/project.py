@@ -8,9 +8,10 @@ from mbget.config import Config
 
 
 class Project(object):
-    def __init__(self, manifest: Manifest, packages: Packages, cache: Cache, config: Config):
-        """
-        """
+    def __init__(
+        self, manifest: Manifest, packages: Packages, cache: Cache, config: Config
+    ):
+        """"""
         self.dependencies: Dict[str, Dependency] = {}
         self.manifest = manifest
         self.packages = packages
@@ -37,10 +38,14 @@ class Project(object):
 
     def __write_barrel_jungle(self, file) -> None:
         barrel_path = "$(base.barrelPath)"
-        file.write('# Do not hand edit this auto generated file from mbget\n')
+        file.write("# Do not hand edit this auto generated file from mbget\n")
 
         for dep in self.dependencies.values():
-            file.write('{name} = "{asset}"\n'.format(name=dep.package_name, asset=dep.barrel_name))
+            file.write(
+                '{name} = "{asset}"\n'.format(
+                    name=dep.package_name, asset=dep.barrel_name
+                )
+            )
             barrel_path += ";$({name})".format(name=dep.package_name)
 
         file.write("base.barrelPath = {barrel_path}".format(barrel_path=barrel_path))
@@ -49,7 +54,7 @@ class Project(object):
         """
         Write the barrel.jungle file out to disk
         """
-        self.__config.open_file(self.__config.jungle, 'w', self.__write_barrel_jungle)
+        self.__config.open_file(self.__config.jungle, "w", self.__write_barrel_jungle)
 
     def __build_dependencies(self):
         for dep in self.manifest.get_depends():

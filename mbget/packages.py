@@ -24,4 +24,6 @@ class Packages(object):
                 else:
                     raise UpdateError(
                         "Poorly formatted package map on line {line_num}: {line}".format(
-                            line_num=i, line=line))
+                            line_num=i, line=line
+                        )
+                    )

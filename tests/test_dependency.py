@@ -4,7 +4,6 @@ from mbget.dependency import Dependency
 
 
 class TestDependency(unittest.TestCase):
-
     def test_dependency_name_is_correct(self):
         dep = Dependency("Depend")
 

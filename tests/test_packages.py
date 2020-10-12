@@ -7,13 +7,10 @@ from mbget.packages import Packages
 
 
 class TestPackages(unittest.TestCase):
-
     def test_init_attempts_read(self):
         packages = StringIO("")
         mock_config = Mock(Config)
-        attr = {
-            'open_file.side_effect': lambda name, mode, cb: cb(packages)
-        }
+        attr = {"open_file.side_effect": lambda name, mode, cb: cb(packages)}
         mock_config.configure_mock(**attr)
 
         packages = Packages(mock_config)
@@ -26,9 +23,7 @@ class TestPackages(unittest.TestCase):
         package_mock = PropertyMock(return_value="package.txt")
         type(mock_config).package = package_mock
 
-        attr = {
-            'open_file.side_effect': lambda name, mode, cb: cb(packages)
-        }
+        attr = {"open_file.side_effect": lambda name, mode, cb: cb(packages)}
         mock_config.configure_mock(**attr)
 
         packages = Packages(mock_config)
@@ -38,9 +33,7 @@ class TestPackages(unittest.TestCase):
     def test_init_gets_correct_repo_path_from_package(self):
         packages = StringIO("Depend1=>owner/Depend1")
         mock_config = Mock(Config)
-        attr = {
-            'open_file.side_effect': lambda name, mode, cb: cb(packages)
-        }
+        attr = {"open_file.side_effect": lambda name, mode, cb: cb(packages)}
         mock_config.configure_mock(**attr)
 
         packages = Packages(mock_config)
@@ -50,9 +43,7 @@ class TestPackages(unittest.TestCase):
     def test_init_gets_multiple_correct_repos_from_package(self):
         packages = StringIO("Depend1=>owner/Depend1\nDepend2=>owner2/Depend2")
         mock_config = Mock(Config)
-        attr = {
-            'open_file.side_effect': lambda name, mode, cb: cb(packages)
-        }
+        attr = {"open_file.side_effect": lambda name, mode, cb: cb(packages)}
         mock_config.configure_mock(**attr)
 
         packages = Packages(mock_config)

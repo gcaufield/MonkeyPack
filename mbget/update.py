@@ -8,7 +8,9 @@ from mbget.project import Project
 class Update(object):
     """Update handler"""
 
-    def __init__(self, project: Project, downloader: GithubDownloader = GithubDownloader()):
+    def __init__(
+        self, project: Project, downloader: GithubDownloader = GithubDownloader()
+    ):
         self.__downloader = downloader
         self.__project = project
 
@@ -27,5 +29,7 @@ class Update(object):
     def __download_dependency_assets(self, dep: Dependency) -> None:
         asset = self.__downloader.download_barrel(dep)
         barrel_name = os.path.join(self.__project.config.barrel_dir, asset.name)
-        self.__project.config.open_file(barrel_name, "wb", lambda f: f.write(asset.content))
+        self.__project.config.open_file(
+            barrel_name, "wb", lambda f: f.write(asset.content)
+        )
         dep.set_barrel_name(barrel_name)
