@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Any
 
 from mbget.version import Version
 
@@ -11,8 +11,8 @@ class Dependency(object):
         self.__barrel_name: Optional[str] = None
         pass
 
-    def __eq__(self, other):
-        if other is not Dependency:
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, Dependency):
             return False
 
         return other.__package_name == self.__package_name and \
@@ -41,6 +41,6 @@ class Dependency(object):
     def barrel_name(self) -> Optional[str]:
         return self.__barrel_name
 
-    def set_barrel_name(self, name):
+    def set_barrel_name(self, name: str) -> None:
         self.__barrel_name = name
 

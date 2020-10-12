@@ -1,4 +1,5 @@
 import re
+from typing import Any
 
 
 class Version(object):
@@ -8,6 +9,12 @@ class Version(object):
 
     def __str__(self) -> str:
         return self.version
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, Version):
+            return False
+
+        return other.version == self.version
 
     def matches(self, other) -> bool:
         """
