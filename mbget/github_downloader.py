@@ -24,14 +24,8 @@ class GithubDownloader(object):
     def download_barrel(self, dependency: Dependency) -> BarrelAsset:
         release = self.__find_release(dependency)
         asset = self.__get_barrel_asset(release)
-
-        print(
-            "Downloading asset {asset} from release {rel}".format(
-                asset=asset.name, rel=release.tag_name
-            )
-        )
-
         content = self.__request_barrel_content(asset)
+
         return BarrelAsset(asset.name, release.tag_name, content)
 
     def __request_barrel_content(self, asset: GitReleaseAsset) -> bytes:

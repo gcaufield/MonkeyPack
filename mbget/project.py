@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List
 
 from mbget.cache import Cache
 from mbget.manifest import Manifest
@@ -24,7 +24,15 @@ class Project(object):
         return self.__config
 
     @property
-    def uncached_dependencies(self):
+    def cached_dependencies(self) -> List[Dependency]:
+        deps = []
+        for dep in self.dependencies.values():
+            if dep in self.__cache:
+                deps.append(dep)
+        return deps
+
+    @property
+    def uncached_dependencies(self) -> List[Dependency]:
         deps = []
         for dep in self.dependencies.values():
             if dep not in self.__cache:
