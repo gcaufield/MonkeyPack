@@ -1,4 +1,5 @@
 import argparse
+import logging
 
 from mbget.cache import Cache
 from mbget.config import Config
@@ -50,6 +51,9 @@ def main():
     update_parser.set_defaults(func=run_update)
 
     args = parser.parse_args()
+
+    logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.INFO)
+
     if args.func is not None:
         args.func(args)
     else:

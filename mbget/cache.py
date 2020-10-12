@@ -1,17 +1,17 @@
 import json
 import os
+import logging
 from typing import TextIO, Dict
 
 from mbget.config import Config
 from mbget.dependency import Dependency
-from mbget.errors import Error
 from mbget.file_hasher import FileHasher
 
 
 class Cache(object):
     def __init__(self, config: Config, hasher: FileHasher = FileHasher()):
         self.cache: Dict[str, Dict[str, str]] = {}
-        self.hasher = hasher
+        self.__hasher = hasher
         self.__config = config
 
         self.__read_cache_file_if_exists()
@@ -22,8 +22,7 @@ class Cache(object):
         try:
             self.cache = json.load(file)
         except (OSError, json.JSONDecodeError):
-            # Couldn't open cache TODO add CacheError
-            raise Error("Couldn't read cache file")
+            logging.debug("Cache file is corrupt.")
 
     def __read_cache_file_if_exists(self) -> None:
         """
@@ -44,19 +43,29 @@ class Cache(object):
     def add_dependency(self, dependency: Dependency):
         entry = {
             "asset": str(dependency.barrel_name),
-            "hash": self.hasher.hash_file(dependency.barrel_name),
+            "hash": self.__hasher.hash_file(dependency.barrel_name),
             "version": str(dependency.version),
         }
 
         self.cache[dependency.package_name] = entry
         self.__dirty = True
 
+    def __get_asset(self, key: str) -> str:
+        assert key in self.cache
+        return self.cache[key]["asset"]
+
     def __validate_cache(self):
         invalid_entries = []
         for key in self.cache:
             if not self.__asset_exists(key):
+                logging.debug(
+                    "Asset {asset} removed.".format(asset=self.__get_asset(key))
+                )
                 invalid_entries.append(key)
             elif not self.__is_asset_valid(key):
+                logging.debug(
+                    "Asset {asset} corrupt.".format(asset=self.__get_asset(key))
+                )
                 invalid_entries.append(key)
 
         for entry in invalid_entries:
@@ -76,12 +85,12 @@ class Cache(object):
         return os.path.join(self.__config.barrel_dir, ".mbgetcache")
 
     def __asset_exists(self, key):
-        return os.path.exists(self.cache[key]["asset"])
+        return os.path.exists(self.__get_asset(key))
 
     def __is_asset_valid(self, key):
-        asset_path = self.cache[key]["asset"]
+        asset_path = self.__get_asset(key)
         expected_hash = self.cache[key]["hash"]
-        return self.hasher.match(asset_path, expected_hash)
+        return self.__hasher.match(asset_path, expected_hash)
 
     def get_barrel_for_package(self, dep) -> str:
         return self.cache[dep.package_name]["asset"]
