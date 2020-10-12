@@ -1,7 +1,9 @@
 import re
 
 import requests
-from github import Github, GitReleaseAsset, GitRelease
+from github import Github
+from github.GitRelease import GitRelease
+from github.GitReleaseAsset import GitReleaseAsset
 
 from mbget.barrel_asset import BarrelAsset
 from mbget.errors import Error
@@ -48,6 +50,9 @@ class GithubDownloader(object):
         raise Error("No barrel asset found in release: {rel}".format(rel=release.tag_name))
 
     def __find_release(self, dependency: Dependency) -> GitRelease:
+        assert dependency.repo is not None
+        assert dependency.version is not None
+
         repo = self.__github.get_repo(dependency.repo)
 
         # Search the releases for a version that we can use

@@ -11,7 +11,7 @@ class FileHasher(object):
     def match(self, file_path, expected_hash) -> bool:
         return self.hash_file(file_path) == expected_hash
 
-    def hash_file(self, file_path):
+    def hash_file(self, file_path) -> str:
         """
 
         :param file_path:

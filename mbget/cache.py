@@ -1,6 +1,6 @@
 import json
 import os
-from typing import TextIO
+from typing import TextIO, Dict
 
 from mbget.config import Config
 from mbget.dependency import Dependency
@@ -10,7 +10,7 @@ from mbget.file_hasher import FileHasher
 
 class Cache(object):
     def __init__(self, config: Config, hasher: FileHasher = FileHasher()):
-        self.cache = {}
+        self.cache: Dict[str, Dict[str, str]] = {}
         self.hasher = hasher
         self.__config = config
 
@@ -40,7 +40,7 @@ class Cache(object):
         self.__dirty = False
 
     def add_dependency(self, dependency: Dependency):
-        entry = {"asset": dependency.barrel_name,
+        entry = {"asset": str(dependency.barrel_name),
                  "hash": self.hasher.hash_file(dependency.barrel_name),
                  "version": str(dependency.version)}
 
@@ -63,7 +63,9 @@ class Cache(object):
             return False
 
         cached_dep = self.cache[item.package_name]
-        return item.version.matches(cached_dep["version"])
+        if item.version is not None:
+            return item.version.matches(cached_dep["version"])
+        return False
 
     @property
     def __cache_file(self):

@@ -1,4 +1,4 @@
-from typing import TextIO
+from typing import TextIO, Dict
 
 from mbget.config import Config
 from mbget.errors import UpdateError
@@ -6,7 +6,7 @@ from mbget.errors import UpdateError
 
 class Packages(object):
     def __init__(self, config: Config):
-        self.package_map = {}
+        self.package_map: Dict[str, str] = {}
         config.open_file(config.package, "r", self.__parse_packages)
 
     def get_repo_for_package(self, package) -> str:

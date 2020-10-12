@@ -1,3 +1,5 @@
+from typing import Dict
+
 from mbget.cache import Cache
 from mbget.manifest import Manifest
 from mbget.packages import Packages
@@ -9,7 +11,7 @@ class Project(object):
     def __init__(self, manifest: Manifest, packages: Packages, cache: Cache, config: Config):
         """
         """
-        self.dependencies = dict()
+        self.dependencies: Dict[str, Dependency] = {}
         self.manifest = manifest
         self.packages = packages
         self.__cache = cache
