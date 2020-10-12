@@ -1,6 +1,7 @@
 import argparse
 import logging
 
+from mbget.github_downloader import GithubDownloader
 from mbget.cache import Cache
 from mbget.config import Config
 from mbget.manifest import Manifest
@@ -17,7 +18,8 @@ def run_update(args):
     cache = Cache(config)
 
     project = Project(manifest, packages, cache, config)
-    updater = Update(project)
+    downloader = GithubDownloader(config.token)
+    updater = Update(project, downloader)
 
     updater.update_project()
 

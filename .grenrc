@@ -1,0 +1,12 @@
+{
+  "dataSource": "commits",
+  "ignoreIssuesWith": [
+    "wontfix",
+    "duplicate"
+  ],
+  "draft": true,
+  "groupBy": {
+    "Enhancements:": ["enhancement"],
+    "Bug Fixes:": ["bug"]
+  }
+}

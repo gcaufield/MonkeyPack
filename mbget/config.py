@@ -3,21 +3,26 @@ import os
 
 class Config(object):
     def __init__(self, args):
+        self.__token = args.token
         self.__package = args.package
         self.__output_dir = args.directory
         self.__jungle = args.jungle
 
     @property
-    def jungle(self):
+    def jungle(self) -> str:
         return self.__jungle
 
     @property
-    def package(self):
+    def package(self) -> str:
         return self.__package
 
     @property
-    def barrel_dir(self):
+    def barrel_dir(self) -> str:
         return self.__output_dir
+
+    @property
+    def token(self) -> str:
+        return self.__token
 
     def prepare_project_dir(self) -> None:
         """

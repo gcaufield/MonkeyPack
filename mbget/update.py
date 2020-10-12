@@ -10,9 +10,7 @@ from mbget.project import Project
 class Update(object):
     """Update handler"""
 
-    def __init__(
-        self, project: Project, downloader: GithubDownloader = GithubDownloader()
-    ):
+    def __init__(self, project: Project, downloader: GithubDownloader):
         self.__downloader = downloader
         self.__project = project
 
