@@ -13,8 +13,8 @@ script:
   - tox
 after_success: bash <(curl -s https://codecov.io/bash) 
 before_deploy: 
-  install: npm install -g github-release-notes
-  script: gren
+  - npm install -g github-release-notes
+  - gren
 deploy:
   provider: pypi
   username: "__token__"
