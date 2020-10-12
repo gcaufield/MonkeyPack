@@ -84,13 +84,13 @@ class Cache(object):
     def __cache_file(self):
         return os.path.join(self.__config.barrel_dir, ".mbgetcache")
 
-    def __asset_exists(self, key):
+    def __asset_exists(self, key: str):
         return os.path.exists(self.__get_asset(key))
 
-    def __is_asset_valid(self, key):
+    def __is_asset_valid(self, key: str):
         asset_path = self.__get_asset(key)
         expected_hash = self.cache[key]["hash"]
         return self.__hasher.match(asset_path, expected_hash)
 
-    def get_barrel_for_package(self, dep) -> str:
+    def get_barrel_for_package(self, dep: Dependency) -> str:
         return self.cache[dep.package_name]["asset"]
