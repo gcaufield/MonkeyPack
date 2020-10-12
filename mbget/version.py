@@ -16,7 +16,7 @@ class Version(object):
         :return:
         """
         tag_match = re.compile("^v?{version}".format(version=self.version))
-        if tag_match.match(other) is None:
+        if tag_match.match(str(other)) is None:
             return False
 
         return True
