@@ -1,7 +1,7 @@
 import os
 import logging
 
-from errors import Error
+from mbget.errors import Error
 from mbget.dependency import Dependency
 from mbget.github_downloader import GithubDownloader
 from mbget.project import Project
