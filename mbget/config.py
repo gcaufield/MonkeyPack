@@ -1,9 +1,13 @@
 import os
+from typing import Optional
 
 
 class Config(object):
     def __init__(self, args):
-        self.__token = args.token
+        if args.token is not None:
+            self.__token = args.token[0]
+        else:
+            self.__token = None
         self.__package = args.package
         self.__output_dir = args.directory
         self.__jungle = args.jungle
@@ -21,7 +25,7 @@ class Config(object):
         return self.__output_dir
 
     @property
-    def token(self) -> str:
+    def token(self) -> Optional[str]:
         return self.__token
 
     def prepare_project_dir(self) -> None:

@@ -14,7 +14,6 @@ script:
 after_success: bash <(curl -s https://codecov.io/bash) 
 before_deploy: 
   - npm install -g github-release-notes
-  - gren
 deploy:
   provider: pypi
   username: "__token__"
@@ -25,3 +24,4 @@ deploy:
   distributions: "sdist bdist_wheel"
   skip_existing: true
   skip_cleanup: true
+  script: gren release
