@@ -36,8 +36,11 @@ class Config(object):
     def __init__(self, args):
         if args.token is not None:
             self.__token = args.token[0]
+        elif "MBGET_GH_TOKEN" in os.environ:
+            self.__token = os.environ["MBGET_GH_TOKEN"]
         else:
             self.__token = None
+
         self.__package = args.package
         self.__output_dir = args.directory
         self.__jungle = args.jungle
