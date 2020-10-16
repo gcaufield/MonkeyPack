@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 
-############################ Copyrights and license ############################
+# ########################## Copyrights and license ########################## #
 #                                                                              #
 # Copyright 2020 Greg Caufield <greg@embeddedcoffee.ca>                        #
 #                                                                              #
-# This file is part of MonkeyPack Pacage Manager                               #
+# This file is part of MonkeyPack Package Manager                              #
 #                                                                              #
 # The MIT Licence                                                              #
 #                                                                              #
@@ -26,7 +26,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS #
 # IN THE SOFTWARE.                                                             #
 #                                                                              #
-################################################################################
+# ############################################################################ #
 
 from typing import TextIO
 from xml.etree import ElementTree as Et

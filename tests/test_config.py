@@ -4,7 +4,7 @@
 #                                                                              #
 # Copyright 2020 Greg Caufield <greg@embeddedcoffee.ca>                        #
 #                                                                              #
-# This file is part of MonkeyPack Pacage Manager                               #
+# This file is part of MonkeyPack Package Manager                              #
 #                                                                              #
 # The MIT Licence                                                              #
 #                                                                              #

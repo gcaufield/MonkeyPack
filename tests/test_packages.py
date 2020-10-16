@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-############################ Copyrights and license ############################
+# ########################## Copyrights and license ########################## #
 #                                                                              #
 # Copyright 2020 Greg Caufield <greg@embeddedcoffee.ca>                        #
 #                                                                              #
@@ -26,7 +26,7 @@
 # FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS #
 # IN THE SOFTWARE.                                                             #
 #                                                                              #
-################################################################################
+# ############################################################################ #
 
 import unittest
 from io import StringIO
