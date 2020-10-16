@@ -29,7 +29,7 @@
 # ############################################################################ #
 
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, mock_open, Mock
 
 from mbget.config import Config
 
@@ -86,3 +86,31 @@ class TestConfig(unittest.TestCase):
             e.return_value = True
             cfg.prepare_project_dir()
             m.assert_not_called()
+
+    def test_open_file_calls_callback_with_expected_stream(self):
+        cfg = Config(self.__build_args())
+        cb = Mock()
+
+        with patch("builtins.open", mock_open(read_data="A Test file")):
+            cfg.open_file("mockfile", "r", cb)
+
+        cb.assert_called_once()
+
+    def test_open_file_passes_file_to_callback(self):
+        cfg = Config(self.__build_args())
+
+        with patch("builtins.open", mock_open(read_data="A Test file")):
+            cfg.open_file(
+                "mockfile", "r", lambda f: self.assertEqual("A Test file", f.readline())
+            )
+
+    def test_open_file_can_write(self):
+        cfg = Config(self.__build_args())
+        m = mock_open()
+
+        with patch("builtins.open", m):
+            cfg.open_file("mockfile", "w", lambda f: f.write("some data"))
+
+        m.assert_called_once_with("mockfile", "w")
+        handle = m()
+        handle.write.assert_called_once_with("some data")
