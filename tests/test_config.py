@@ -59,6 +59,16 @@ class TestConfig(unittest.TestCase):
         cfg = Config(self.__build_args(token=["12345abc"]))
         self.assertEqual("12345abc", cfg.token)
 
+    def test_token_from_env_if_arg_is_none(self):
+        with patch.dict("os.environ", {"MBGET_GH_TOKEN": "125aeb"}):
+            cfg = Config(self.__build_args(token=None))
+            self.assertEqual("125aeb", cfg.token)
+
+    def test_token_prioritizes_args_over_env(self):
+        with patch.dict("os.environ", {"MBGET_GH_TOKEN": "125aeb"}):
+            cfg = Config(self.__build_args(token=["12345abc"]))
+            self.assertEqual("12345abc", cfg.token)
+
     def test_barrel_dir_is_valid(self):
         cfg = Config(self.__build_args(directory="barrels"))
         self.assertEqual("barrels", cfg.barrel_dir)
