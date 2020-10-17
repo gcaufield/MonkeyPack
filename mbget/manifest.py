@@ -28,7 +28,7 @@
 #                                                                              #
 # ############################################################################ #
 
-from typing import TextIO
+from typing import TextIO, Union
 from xml.etree import ElementTree as Et
 
 from mbget.errors import Error
@@ -37,7 +37,7 @@ from mbget.errors import Error
 class Manifest(object):
     ns = {"iq": "http://www.garmin.com/xml/connectiq"}
 
-    def __init__(self, manifest_stream: TextIO):
+    def __init__(self, manifest_stream: Union[TextIO, str]):
         self.root = Et.ElementTree(file=manifest_stream).getroot()
         self.__validate_manifest()
         self.__build_version_map()
