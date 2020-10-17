@@ -42,10 +42,14 @@ class MicroMock(object):
 class TestConfig(unittest.TestCase):
     @staticmethod
     def __build_args(
-        token=None, package="packages.txt", directory="barrels", jungle="barrels.jungle"
+        token=None, package=None, directory=None, jungle=None, manifest=None
     ):
         return MicroMock(
-            token=token, package=package, directory=directory, jungle=jungle
+            token=token,
+            package=package,
+            directory=directory,
+            jungle=jungle,
+            manifest=manifest,
         )
 
     def test_can_init_config(self):
@@ -56,7 +60,7 @@ class TestConfig(unittest.TestCase):
         self.assertIsNone(cfg.token)
 
     def test_token_is_valid(self):
-        cfg = Config(self.__build_args(token=["12345abc"]))
+        cfg = Config(self.__build_args(token="12345abc"))
         self.assertEqual("12345abc", cfg.token)
 
     def test_token_from_env_if_arg_is_none(self):
@@ -66,20 +70,40 @@ class TestConfig(unittest.TestCase):
 
     def test_token_prioritizes_args_over_env(self):
         with patch.dict("os.environ", {"MBGET_GH_TOKEN": "125aeb"}):
-            cfg = Config(self.__build_args(token=["12345abc"]))
+            cfg = Config(self.__build_args(token="12345abc"))
             self.assertEqual("12345abc", cfg.token)
+
+    def test_default_barrel_dir_is_valid(self):
+        cfg = Config(self.__build_args())
+        self.assertEqual(".mbpkg", cfg.barrel_dir)
 
     def test_barrel_dir_is_valid(self):
         cfg = Config(self.__build_args(directory="barrels"))
         self.assertEqual("barrels", cfg.barrel_dir)
 
-    def test_package_is_valid(self):
-        cfg = Config(self.__build_args(package="packages.txt"))
+    def test_default_package_is_valid(self):
+        cfg = Config(self.__build_args())
         self.assertEqual("packages.txt", cfg.package)
 
-    def test_jungle_is_valid(self):
-        cfg = Config(self.__build_args(jungle="barrels.jungle"))
+    def test_package_is_valid(self):
+        cfg = Config(self.__build_args(package="pck.txt"))
+        self.assertEqual("pck.txt", cfg.package)
+
+    def test_default_jungle_is_valid(self):
+        cfg = Config(self.__build_args())
         self.assertEqual("barrels.jungle", cfg.jungle)
+
+    def test_jungle_is_valid(self):
+        cfg = Config(self.__build_args(jungle="brrls.jungle"))
+        self.assertEqual("brrls.jungle", cfg.jungle)
+
+    def test_default_manifest_is_valid(self):
+        cfg = Config(self.__build_args())
+        self.assertEqual("manifest.xml", cfg.manifest)
+
+    def test_manifest_is_valid(self):
+        cfg = Config(self.__build_args(manifest="mfst.xml"))
+        self.assertEqual("mfst.xml", cfg.manifest)
 
     def test_prepare_builds_output_dir_if_not_exists(self):
         cfg = Config(self.__build_args(directory="barrels"))

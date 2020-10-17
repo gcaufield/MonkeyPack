@@ -33,33 +33,43 @@ from typing import Optional
 
 
 class Config(object):
+    __DEFAULTS__ = {
+        "package": "packages.txt",
+        "directory": ".mbpkg",
+        "jungle": "barrels.jungle",
+        "manifest": "manifest.xml",
+    }
+
     def __init__(self, args):
+        self.__args = args
+        self.__cached_vals = {}
+
         if args.token is not None:
-            self.__token = args.token[0]
+            self.__token = args.token
         elif "MBGET_GH_TOKEN" in os.environ:
             self.__token = os.environ["MBGET_GH_TOKEN"]
         else:
             self.__token = None
 
-        self.__package = args.package
-        self.__output_dir = args.directory
-        self.__jungle = args.jungle
-
     @property
     def jungle(self) -> str:
-        return self.__jungle
+        return self.__get_cached_config("jungle")
 
     @property
     def package(self) -> str:
-        return self.__package
+        return self.__get_cached_config("package")
 
     @property
     def barrel_dir(self) -> str:
-        return self.__output_dir
+        return self.__get_cached_config("directory")
 
     @property
     def token(self) -> Optional[str]:
         return self.__token
+
+    @property
+    def manifest(self) -> str:
+        return self.__get_cached_config("manifest")
 
     def prepare_project_dir(self) -> None:
         """
@@ -75,8 +85,22 @@ class Config(object):
 
         :return:
         """
-        if not os.path.exists(self.__output_dir):
-            os.mkdir(self.__output_dir)
+        if not os.path.exists(self.barrel_dir):
+            os.mkdir(self.barrel_dir)
+
+    def __get_cached_config(self, param) -> str:
+        if param not in self.__cached_vals:
+            self.__add_config_to_cache(param)
+
+        return self.__cached_vals[param]
+
+    def __add_config_to_cache(self, param):
+        if hasattr(self.__args, param) and getattr(self.__args, param) is not None:
+            val = getattr(self.__args, param)
+        else:
+            val = self.__DEFAULTS__[param]
+
+        self.__cached_vals[param] = val
 
     @staticmethod
     def open_file(name, mode, callback) -> None:
