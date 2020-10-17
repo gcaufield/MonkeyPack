@@ -27,7 +27,6 @@
 # IN THE SOFTWARE.                                                             #
 #                                                                              #
 # ############################################################################ #
-
 import unittest
 from unittest.mock import patch, mock_open, Mock
 
@@ -52,8 +51,41 @@ class TestConfig(unittest.TestCase):
             manifest=manifest,
         )
 
+    @staticmethod
+    def __build_cfg(package=None, directory=None, jungle=None, manifest=None) -> str:
+        rv = "[mbget]\n"
+
+        if package is not None:
+            rv += "package = {}\n".format(package)
+
+        if directory is not None:
+            rv += "directory = {}\n".format(directory)
+
+        if jungle is not None:
+            rv += "jungle = {}\n".format(jungle)
+
+        if manifest is not None:
+            rv += "manifest = {}\n".format(manifest)
+
+        return rv
+
+    def setUp(self):
+        super(TestConfig, self).setUp()
+        pat = patch("os.path.exists")
+        self.__mock_path = pat.start()
+        self.__mock_path.return_value = False
+        self.addCleanup(pat.stop)
+
     def test_can_init_config(self):
         Config(self.__build_args())
+
+    def test_reads_config_file_if_exists(self):
+        self.__mock_path.return_value = True
+        m = mock_open(read_data="")
+        with patch("builtins.open", m):
+            Config(self.__build_args())
+
+        m.assert_called_once_with("mbgetcfg.ini", "r")
 
     def test_token_is_none(self):
         cfg = Config(self.__build_args(token=None))
@@ -81,6 +113,14 @@ class TestConfig(unittest.TestCase):
         cfg = Config(self.__build_args(directory="barrels"))
         self.assertEqual("barrels", cfg.barrel_dir)
 
+    def test_barrel_dir_from_cfg_is_valid(self):
+        self.__mock_path.return_value = True
+        m = mock_open(read_data=self.__build_cfg(directory="barrels"))
+        with patch("builtins.open", m):
+            cfg = Config(self.__build_args())
+
+        self.assertEqual("barrels", cfg.barrel_dir)
+
     def test_default_package_is_valid(self):
         cfg = Config(self.__build_args())
         self.assertEqual("packages.txt", cfg.package)
@@ -88,6 +128,14 @@ class TestConfig(unittest.TestCase):
     def test_package_is_valid(self):
         cfg = Config(self.__build_args(package="pck.txt"))
         self.assertEqual("pck.txt", cfg.package)
+
+    def test_package_from_cfg_is_valid(self):
+        self.__mock_path.return_value = True
+        m = mock_open(read_data=self.__build_cfg(package="pack.txt"))
+        with patch("builtins.open", m):
+            cfg = Config(self.__build_args())
+
+        self.assertEqual("pack.txt", cfg.package)
 
     def test_default_jungle_is_valid(self):
         cfg = Config(self.__build_args())
@@ -97,6 +145,14 @@ class TestConfig(unittest.TestCase):
         cfg = Config(self.__build_args(jungle="brrls.jungle"))
         self.assertEqual("brrls.jungle", cfg.jungle)
 
+    def test_jungle_from_cfg_is_valid(self):
+        self.__mock_path.return_value = True
+        m = mock_open(read_data=self.__build_cfg(jungle="brl.jungle"))
+        with patch("builtins.open", m):
+            cfg = Config(self.__build_args())
+
+        self.assertEqual("brl.jungle", cfg.jungle)
+
     def test_default_manifest_is_valid(self):
         cfg = Config(self.__build_args())
         self.assertEqual("manifest.xml", cfg.manifest)
@@ -104,6 +160,14 @@ class TestConfig(unittest.TestCase):
     def test_manifest_is_valid(self):
         cfg = Config(self.__build_args(manifest="mfst.xml"))
         self.assertEqual("mfst.xml", cfg.manifest)
+
+    def test_manifest_from_cfg_is_valid(self):
+        self.__mock_path.return_value = True
+        m = mock_open(read_data=self.__build_cfg(manifest="man.xml"))
+        with patch("builtins.open", m):
+            cfg = Config(self.__build_args())
+
+        self.assertEqual("man.xml", cfg.manifest)
 
     def test_prepare_builds_output_dir_if_not_exists(self):
         cfg = Config(self.__build_args(directory="barrels"))

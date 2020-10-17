@@ -29,6 +29,7 @@
 # ############################################################################ #
 
 import os
+from configparser import ConfigParser
 from typing import Optional
 
 
@@ -42,6 +43,17 @@ class Config(object):
 
     def __init__(self, args):
         self.__args = args
+        self.__config_file = None
+        if os.path.exists("mbgetcfg.ini"):
+            config = ConfigParser()
+            with open("mbgetcfg.ini", "r") as f:
+                data = f.read()
+
+            config.read_string(data)
+
+            if "mbget" in config:
+                self.__config_file = config["mbget"]
+
         self.__cached_vals = {}
 
         if args.token is not None:
@@ -97,6 +109,8 @@ class Config(object):
     def __add_config_to_cache(self, param):
         if hasattr(self.__args, param) and getattr(self.__args, param) is not None:
             val = getattr(self.__args, param)
+        elif self.__config_file is not None and param in self.__config_file:
+            val = self.__config_file[param]
         else:
             val = self.__DEFAULTS__[param]
 
