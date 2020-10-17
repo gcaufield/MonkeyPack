@@ -39,7 +39,7 @@ requires = ["requests>=2.0,<3", "PyGithub~=1.53"]
 
 setup(
     name="mbpkg",
-    version="1.2.2",
+    version="1.3.0",
     description="Connect IQ Package Manager",
     long_description=readme,
     long_description_content_type="text/markdown",
