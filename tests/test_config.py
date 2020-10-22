@@ -41,7 +41,12 @@ class MicroMock(object):
 class TestConfig(unittest.TestCase):
     @staticmethod
     def __build_args(
-        token=None, package=None, directory=None, jungle=None, manifest=None, config=None
+        token=None,
+        package=None,
+        directory=None,
+        jungle=None,
+        manifest=None,
+        config=None,
     ):
         return MicroMock(
             token=token,
@@ -49,7 +54,7 @@ class TestConfig(unittest.TestCase):
             directory=directory,
             jungle=jungle,
             manifest=manifest,
-            config=config
+            config=config,
         )
 
     @staticmethod
