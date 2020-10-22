@@ -57,6 +57,7 @@ def run_update(args):
 def main():
     parser = argparse.ArgumentParser(description="Connect IQ Package Manager")
     parser.add_argument("-t", "--token", help="Github API token for requests")
+    parser.add_argument("-c", "--config", help="Specify path to config INI")
     parser.add_argument("-m", "--manifest", help="Specify application manifest")
     parser.add_argument("-p", "--package", help="Specify the package map text file")
     parser.add_argument("-j", "--jungle", help="Barrel Jungle file")

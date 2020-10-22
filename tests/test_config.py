@@ -41,7 +41,7 @@ class MicroMock(object):
 class TestConfig(unittest.TestCase):
     @staticmethod
     def __build_args(
-        token=None, package=None, directory=None, jungle=None, manifest=None
+        token=None, package=None, directory=None, jungle=None, manifest=None, config=None
     ):
         return MicroMock(
             token=token,
@@ -49,6 +49,7 @@ class TestConfig(unittest.TestCase):
             directory=directory,
             jungle=jungle,
             manifest=manifest,
+            config=config
         )
 
     @staticmethod
@@ -79,13 +80,21 @@ class TestConfig(unittest.TestCase):
     def test_can_init_config(self):
         Config(self.__build_args())
 
-    def test_reads_config_file_if_exists(self):
+    def test_reads_default_config_file_if_exists(self):
         self.__mock_path.return_value = True
         m = mock_open(read_data="")
         with patch("builtins.open", m):
             Config(self.__build_args())
 
         m.assert_called_once_with("mbgetcfg.ini", "r")
+
+    def test_reads_config_file_from_args(self):
+        self.__mock_path.return_value = True
+        m = mock_open(read_data="")
+        with patch("builtins.open", m):
+            Config(self.__build_args(config="test.ini"))
+
+        m.assert_called_once_with("test.ini", "r")
 
     def test_token_is_none(self):
         cfg = Config(self.__build_args(token=None))

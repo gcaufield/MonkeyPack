@@ -44,9 +44,14 @@ class Config(object):
     def __init__(self, args):
         self.__args = args
         self.__config_file = None
-        if os.path.exists("mbgetcfg.ini"):
+        if args.config is not None:
+            config_path = args.config
+        else:
+            config_path = "mbgetcfg.ini"
+
+        if os.path.exists(config_path):
             config = ConfigParser()
-            with open("mbgetcfg.ini", "r") as f:
+            with open(config_path, "r") as f:
                 data = f.read()
 
             config.read_string(data)
