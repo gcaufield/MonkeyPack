@@ -63,7 +63,7 @@ setup(
         "Tracker": "https://github.com/gcaufield/MonkeyPack/issues",
     },
     packages=["mbget"],
-    python_requires=">=3.5.*, < 4",
+    python_requires=">=3.6.*, < 4",
     install_requires=requires,
     entry_points={"console_scripts": ["mbget=mbget.main:main"]},
 )
